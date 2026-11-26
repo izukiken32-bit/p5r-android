@@ -3,7 +3,7 @@ name: Build P5R Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, fix/mali-g57-astc-textures]
   pull_request:
 
 permissions:
