@@ -273,8 +273,14 @@ bool init() {
             VK_API_VERSION_MINOR(props.apiVersion));
     g_features = features.features;
     // NX_ASTC_DECODE=1|linear|srgb: the CPU decoder even where the GPU has ASTC (to compare the two on one GPU).
-    set_astc_native(g_features.textureCompressionASTC_LDR);
-    log("nvn/vk: ASTC %s", astc_native() ? "native" : "decoded to RGBA8 at upload (no textureCompressionASTC_LDR)");
+    const bool mali_astc_workaround = is_mali() && g_features.textureCompressionASTC_LDR;
+    // Mali-G57/G68 reports show blue foliage / corrupted ASTC surfaces in Shibuya. Bypass the driver's
+    // native ASTC sampling path on Mali and decode LDR ASTC to RGBA8 on upload. NX_ASTC_DECODE can still
+    // select a narrower diagnostic set in nvn_format.cpp.
+    set_astc_native(g_features.textureCompressionASTC_LDR && !mali_astc_workaround);
+    log("nvn/vk: ASTC %s", astc_native() ? "native" :
+        mali_astc_workaround ? "CPU-decoded (Mali ASTC compatibility workaround)" :
+                              "decoded to RGBA8 at upload (no textureCompressionASTC_LDR)");
     log("nvn/vk: depthClamp %u, depthBiasClamp %u, depthBounds %u, depth clip control %u (extension %u)",
         g_features.depthClamp, g_features.depthBiasClamp, g_features.depthBounds, g_depth_clip_control,
         has_extension(dext, "VK_EXT_depth_clip_control") ? 1u : 0u);
